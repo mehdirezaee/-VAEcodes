@@ -1,0 +1,2 @@
+model_checkpoint_path: "\\saved_model\\my_model-1000"
+all_model_checkpoint_paths: "\\saved_model\\my_model-1000"
