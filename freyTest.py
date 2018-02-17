@@ -274,6 +274,7 @@ def train(network_architecture, learning_rate=0.001,
             avg_cost += cost / n_samples * batch_size
         # Display logs per epoch step
             #print(vae.reconstr_show_mean)
+        '''
         plt.subplot(341)
         plt.imshow(my_reonstr[1, :].reshape(28, 20), cmap='gray')
         plt.title('Reconst')
@@ -323,8 +324,7 @@ def train(network_architecture, learning_rate=0.001,
         plt.title(70)
 
         #plt.tight_layout()
-        plt.pause(0.05)
-
+        plt.pause(0.05)'''
         loss_step = np.append(loss_step,epoch)
         loss_vec = np.append(loss_vec,avg_cost)
         if epoch % display_step == 0:
