@@ -3,17 +3,29 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import scipy.io as spio
 import pickle
-from tensorflow.examples.tutorials.mnist import input_data
+#from tensorflow.examples.tutorials.mnist import input_data
 
 
 # Load MNIST data in a format suited for tensorflow.
 # The script input_data is available under this URL:
 # https://raw.githubusercontent.com/tensorflow/tensorflow/master/tensorflow/examples/tutorials/mnist/input_data.py
+
+
+
+np.random.seed(0)
+tf.set_random_seed(0)
+#mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
+test_mat = spio.loadmat('/media/mehdi/NewFiles1/Task_data/AOD1.mat', squeeze_me=True)
+test_mat=test_mat['ODD']
+test_mat=(test_mat-np.min(test_mat))/(np.max(test_mat)-np.min(test_mat))
+n_samples=test_mat.shape[0]
+print('test_mat',test_mat[0])
+
+
 def frey_next_batch(num, data):
     '''
     Return a total of `num` random samples and labels.
     '''
-    data=np.transpose(data)
     idx = np.arange(0 , len(data))
     np.random.shuffle(idx)
     idx = idx[:num]
@@ -21,13 +33,6 @@ def frey_next_batch(num, data):
     return np.asarray(data_shuffle)
     #labels_shuffle = [labels[ i] for i in idx]
 
-np.random.seed(0)
-tf.set_random_seed(0)
-#mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
-test_mat = spio.loadmat('frey.mat', squeeze_me=True)
-frey_images=test_mat['ff']
-frey_images=(frey_images-np.min(frey_images))/(np.max(frey_images)-np.min(frey_images))
-w,n_samples=frey_images.shape
 '''f = open('freyfaces.pkl', 'rb')
 frey_images = pickle.load(f, encoding='latin1')
 frey_images=np.transpose(frey_images)
@@ -109,7 +114,7 @@ class VariationalAutoencoder(object):
         (self.x_reconstr_mean,self.x_reconstr_log_sigma) = \
             self._generator_network(network_weights["weights_gener"],
                                     network_weights["biases_gener"])
-        #print(self.my_sess.run(self.x_reconstr_mean,feed_dict={self.x: frey_next_batch(1,frey_images)}))
+        #print(self.my_sess.run(self.x_reconstr_mean,feed_dict={self.x: frey_next_batch(1,test_mat)}))
 
 
     def _initialize_weights(self, n_hidden_recog_1, n_hidden_recog_2,
@@ -153,6 +158,7 @@ class VariationalAutoencoder(object):
                    biases['out_log_sigma'])
         self.first_layer_weights=weights['h1']
         self.second_layer_weights=weights['h2']
+
         return (z_mean, z_log_sigma_sq)
 
     def _generator_network(self, weights, biases):
@@ -164,12 +170,14 @@ class VariationalAutoencoder(object):
         layer_2 = self.transfer_fct(tf.add(tf.matmul(layer_1, weights['h2']),
                                            biases['b2']))
         x_reconstr_mean = \
-            (tf.add(tf.matmul(layer_2, weights['out_mean']),
+            tf.sigmoid(tf.add(tf.matmul(layer_2, weights['out_mean']),
                                  biases['out_mean']))
-        self.reconstr_show_mean=x_reconstr_mean;
         x_reconstr_log_sigma = \
-             (tf.add(tf.matmul(layer_2, weights['out_log_sigma']),
-                                 biases['out_log_sigma']))
+            tf.sigmoid(tf.add(tf.matmul(layer_2, weights['out_log_sigma']),
+                    biases['out_log_sigma']))
+        self.reconstr_show_mean=x_reconstr_mean;
+        #self.x_reconstr_log_sigma = x_reconstr_log_sigma
+
         return (x_reconstr_mean,x_reconstr_log_sigma)
 
     def _create_loss_optimizer(self):
@@ -203,6 +211,8 @@ class VariationalAutoencoder(object):
                                            - tf.square(self.z_mean)
                                            - tf.exp(self.z_log_sigma_sq), 1)
         self.cost = tf.reduce_mean(reconstr_loss + latent_loss)  # average over batch
+        self.reconstr_loss=reconstr_loss
+        self.latent_loss=latent_loss
         # Use ADAM optimizer
         self.optimizer = \
             tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.cost)
@@ -216,6 +226,14 @@ class VariationalAutoencoder(object):
         opt, cost,my_reconst,first_layer_weights= self.sess.run((self.optimizer, self.cost,self.reconstr_show_mean,self.first_layer_weights),
                                   feed_dict={self.x: X})
         #self.reconstr_show_mean=self.sess.run(self.reconstr_show_mean,feed_dict={self.x: X})
+        #reconstr_show_mean,x_reconstr_log_sigma=self.sess.run((self.reconstr_show_mean,self.x_reconstr_log_sigma),feed_dict={self.x:X})
+        #print('layer_1_eval',layer_1_eval)
+        reconstr_loss,latent_loss=self.sess.run((self.reconstr_loss,self.latent_loss),feed_dict={self.x: X})
+
+        #print('reconstr_loss:',reconstr_loss,'\n latent_loss: ',latent_loss)
+        #print('\n')
+        #print('x_reconstr_log_sigma:\n',x_reconstr_log_sigma)
+
         return (cost,my_reconst,first_layer_weights)
 
     def transform(self, X):
@@ -245,86 +263,49 @@ class VariationalAutoencoder(object):
         return (my_reconstr_mean,my_reconstr_sigma)
 
 ################# Train Function #################
-def train(network_architecture, learning_rate=0.001,
-          batch_size=20, training_epochs=10, display_step=5):
+def train(network_architecture, learning_rate=0.0005,
+          batch_size=20, training_epochs=10, display_step=1):
     vae = VariationalAutoencoder(network_architecture,
                                  learning_rate=learning_rate,
                                  batch_size=batch_size)
     loss_vec=np.array([])
     loss_step=np.array([])
-    plt.ion()
     #plt.figure(figsize=(16, 10))
     # Training cycle
     for epoch in range(training_epochs):
         avg_cost = 0.
         total_batch = int(n_samples / batch_size)
-        #plt.figure('image')
-        #plt.imshow(vae.my_reconstr_show_mean.reshape(28, 20), cmap='gray')
         #plt.show(block=False)
         # Loop over all batches
+        plt.ion()
         for i in range(total_batch):
             #batch_xs, _ = mnist.train.next_batch(batch_size)
-            batch_xs = frey_next_batch(batch_size,frey_images)
+            batch_xs = frey_next_batch(batch_size,test_mat)
             #print(batch_xs.shape)
             # Fit training using batch data
-            (cost,my_reonstr,first_layer_weights) = vae.partial_fit(batch_xs)
-            #plt.close()
+
+            plt.subplot(211)
+            plt.plot(batch_xs[0,:])
+
+            #plt.subplot(212)
+            #plt.plot(vae.reconstr_show_mean[0,:])
+
+            (cost,my_reconstr,first_layer_weights) = vae.partial_fit(batch_xs)
+            
+            plt.subplot(212)
+            plt.plot(my_reconstr[0,:])
+
+            plt.show()
+            plt.pause(0.005)
+            plt.gcf().clear()
+
+
             #print('this cost:',cost)
             # Compute average loss
             avg_cost += cost / n_samples * batch_size
         # Display logs per epoch step
             #print(vae.reconstr_show_mean)
-        '''
-        plt.subplot(341)
-        plt.imshow(my_reonstr[1, :].reshape(28, 20), cmap='gray')
-        plt.title('Reconst')
 
-        plt.subplot(342)
-        plt.imshow(first_layer_weights[:, 10].reshape(28, 20), cmap='gray')
-        plt.title(10)
-
-        plt.subplot(343)
-        plt.imshow(first_layer_weights[:, 20].reshape(28, 20), cmap='gray')
-        plt.title(20)
-
-        plt.subplot(344)
-        plt.imshow(first_layer_weights[:, 30].reshape(28, 20), cmap='gray')
-        plt.title(30)
-
-        plt.subplot(345)
-        plt.imshow(first_layer_weights[:, 40].reshape(28, 20), cmap='gray')
-        plt.title(40)
-
-        plt.subplot(346)
-        plt.imshow(first_layer_weights[:, 50].reshape(28, 20), cmap='gray')
-        plt.title(50)
-
-        plt.subplot(347)
-        plt.imshow(first_layer_weights[:, 60].reshape(28, 20), cmap='gray')
-        plt.title(60)
-
-        plt.subplot(348)
-        plt.imshow(first_layer_weights[:, 70].reshape(28, 20), cmap='gray')
-        plt.title(70)
-
-        plt.subplot(3,4,9)
-        plt.imshow(first_layer_weights[:, 80].reshape(28, 20), cmap='gray')
-        plt.title(40)
-
-        plt.subplot(3,4,10)
-        plt.imshow(first_layer_weights[:, 90].reshape(28, 20), cmap='gray')
-        plt.title(50)
-
-        plt.subplot(3,4,11)
-        plt.imshow(first_layer_weights[:, 100].reshape(28, 20), cmap='gray')
-        plt.title(60)
-
-        plt.subplot(3,4,12)
-        plt.imshow(first_layer_weights[:, 110].reshape(28, 20), cmap='gray')
-        plt.title(70)
-
-        #plt.tight_layout()
-        plt.pause(0.05)'''
         loss_step = np.append(loss_step,epoch)
         loss_vec = np.append(loss_vec,avg_cost)
         if epoch % display_step == 0:
@@ -342,15 +323,7 @@ network_architecture = \
          n_hidden_recog_2=200, # 2nd layer encoder neurons
          n_hidden_gener_1=200, # 1st layer decoder neurons
          n_hidden_gener_2=200, # 2nd layer decoder neurons
-         n_input=560, # MNIST data input (img shape: 28*28)
+         n_input=test_mat.shape[1], # MNIST data input (img shape: 28*28)
          n_z=20)  # dimensionality of latent space
-batch_size=100
-(vae,loss_step,loss_vec) = train(network_architecture,batch_size=batch_size, training_epochs=10)
-print('loss_step:',loss_step)
-print('loss_vec:',loss_vec)
-plt.plot(loss_step,loss_vec)
-plt.title('Loss per iteration')
-plt.ylabel('Loss')
-plt.xlabel('Iteration')
-#plt.savefig('Training_Loss_Per_Iteration.pdf',bbox_inches='tight')
-plt.show()
+batch_size=20
+(vae,loss_step,loss_vec) = train(network_architecture,batch_size=batch_size, training_epochs=100)

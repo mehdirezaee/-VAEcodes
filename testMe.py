@@ -278,15 +278,17 @@ network_architecture = \
          n_input=784, # MNIST data input (img shape: 28*28)
          n_z=2)  # dimensionality of latent space
 
-(vae_2d,loss_step,loss_vec) = train(network_architecture, training_epochs=75)
+(vae_2d,loss_step,loss_vec) = train(network_architecture, training_epochs=10)
 
 ################# Latent Space Visualization #################
+'''
 x_sample, y_sample = mnist.test.next_batch(5000)
 z_mu = vae_2d.transform(x_sample)
 plt.figure(figsize=(8, 6))
 plt.scatter(z_mu[:, 0], z_mu[:, 1], c=np.argmax(y_sample, 1))
 #plt.scatter(z_mu[:, 0], z_mu[:, 1])
 plt.colorbar()
-plt.savefig('figures/meanz.pdf', bbox_inches='tight')
+#plt.savefig('figures/meanz.pdf', bbox_inches='tight')
 plt.grid()
 plt.show()
+'''
