@@ -5,10 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="25ee1a45-204e-4cb4-ae77-02c1c3ce9f22" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/aodTest.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/freyTest.py" afterPath="$PROJECT_DIR$/freyTest.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/testMe.py" afterPath="$PROJECT_DIR$/testMe.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/aodTest.py" afterPath="$PROJECT_DIR$/aodTest.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -53,8 +51,8 @@
       <file leaf-file-name="aodTest.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/aodTest.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3259">
-              <caret line="269" column="51" lean-forward="false" selection-start-line="269" selection-start-column="51" selection-end-line="269" selection-end-column="51" />
+            <state relative-caret-position="588">
+              <caret line="417" column="30" lean-forward="true" selection-start-line="417" selection-start-column="30" selection-end-line="417" selection-end-column="30" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -73,36 +71,36 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>adam</find>
-      <find>Epoch</find>
-      <find>n_samp</find>
-      <find>n_samples</find>
-      <find>all_weights</find>
-      <find>_recognition_network</find>
-      <find>first</find>
-      <find>first_layer_we</find>
-      <find>plt.im</find>
-      <find>first_layer_weights</find>
-      <find>first_layer_w</find>
-      <find>88</find>
-      <find>partial</find>
-      <find>reconstr_show_mean</find>
-      <find>frey_next_batch</find>
-      <find>self.x</find>
-      <find>test_mat</find>
-      <find>partial_fit</find>
-      <find>float32</find>
       <find>dtype=test_mat.dtype</find>
       <find>dtype=tf.float64</find>
       <find>tf.float</find>
       <find>frey_image</find>
       <find>my_reconstr_show_mean</find>
-      <find>self.z</find>
       <find>_generator_network</find>
       <find>x_reconstr_log_sigma</find>
       <find>reconstr_show_mea</find>
       <find>display_step</find>
       <find>print</find>
+      <find>reconstruct</find>
+      <find>test_mat</find>
+      <find>train</find>
+      <find>trainin</find>
+      <find>network_architec</find>
+      <find>batch_size</find>
+      <find>self.X</find>
+      <find>self.X.shape</find>
+      <find>_gen</find>
+      <find>test_reconstruct</find>
+      <find>z_mean</find>
+      <find>layer_1_</find>
+      <find>eps</find>
+      <find>n_z</find>
+      <find>weights['out_mean']</find>
+      <find>self.weith</find>
+      <find>self.bat</find>
+      <find>x_reconstr_mean</find>
+      <find>test</find>
+      <find>self.z</find>
     </findStrings>
     <replaceStrings>
       <replace>test_mat.dtype</replace>
@@ -388,18 +386,18 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.26019946" sideWeight="0.5018868" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.33788037" sideWeight="0.49811321" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.31175837" sideWeight="0.49160305" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.1664859" sideWeight="0.51376146" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15097857" sideWeight="0.49811321" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32858595" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
     <layout-to-restore>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32945737" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
@@ -865,8 +863,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/aodTest.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3259">
-          <caret line="269" column="51" lean-forward="false" selection-start-line="269" selection-start-column="51" selection-end-line="269" selection-end-column="51" />
+        <state relative-caret-position="588">
+          <caret line="417" column="30" lean-forward="true" selection-start-line="417" selection-start-column="30" selection-end-line="417" selection-end-column="30" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>

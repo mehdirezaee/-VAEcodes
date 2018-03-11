@@ -12,15 +12,19 @@ import pickle
 
 
 
-np.random.seed(0)
+#np.random.seed(0)
 tf.set_random_seed(0)
 #mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
-test_mat = spio.loadmat('/media/mehdi/NewFiles1/Task_data/AOD1.mat', squeeze_me=True)
-test_mat=test_mat['ODD']
-test_mat=(test_mat-np.min(test_mat))/(np.max(test_mat)-np.min(test_mat))
+rawData = spio.loadmat('/media/mehdi/NewFiles1/Task_data/AOD1.mat', squeeze_me=True)
+rawData=rawData['ODD']
+raw_min=np.min(rawData)
+raw_max=np.max(rawData)
+#test_mat=(rawData-np.min(rawData))/(np.max(rawData)-np.min(rawData))
+''''
+test_mat=(rawData-raw_min)/(raw_max-raw_min)
 n_samples=test_mat.shape[0]
 print('test_mat',test_mat[0])
-
+'''
 
 def frey_next_batch(num, data):
     '''
@@ -71,6 +75,9 @@ class VariationalAutoencoder(object):
         self.learning_rate = learning_rate
         self.batch_size = batch_size
 
+        #if train_level==1, we are in training stage else we are testing
+        #self.train_level=network_architecture["train_level"]
+
         # tf Graph input
         self.x = tf.placeholder(tf.float32, [None, network_architecture["n_input"]])
 
@@ -103,8 +110,16 @@ class VariationalAutoencoder(object):
 
         # Draw one sample z from Gaussian distribution
         n_z = self.network_architecture["n_z"]
+
+        #print('self.batch_size2',self.batch_size)
+
         eps = tf.random_normal((self.batch_size, n_z), 0, 1,
                                dtype=tf.float32)
+
+        '''
+        eps = tf.random_normal((self.x.get_shape()[0], n_z), 0, 1,
+                               dtype=tf.float32)
+        '''
         # z = mu + sigma*epsilon
         self.z = tf.add(self.z_mean,
                         tf.mul(tf.sqrt(tf.exp(self.z_log_sigma_sq)), eps))
@@ -165,6 +180,16 @@ class VariationalAutoencoder(object):
         # Generate probabilistic decoder (decoder network), which
         # maps points in latent space onto a Bernoulli distribution in data space.
         # The transformation is parametrized and can be learned.
+        self.layer_1_weight=weights['h1']
+        self.layer_1_biases=biases['b1']
+
+        self.layer_2_weight=weights['h2']
+        self.layer_2_biases=biases['b2']
+
+        self.weights_out_mean=weights['out_mean']
+        self.weights_out_biases=biases['out_mean']
+
+
         layer_1 = self.transfer_fct(tf.add(tf.matmul(self.z, weights['h1']),
                                            biases['b1']))
         layer_2 = self.transfer_fct(tf.add(tf.matmul(layer_1, weights['h2']),
@@ -262,8 +287,48 @@ class VariationalAutoencoder(object):
         my_reconstr_sigma= self.sess.run(self.x_reconstr_mean,feed_dict={self.x: X})
         return (my_reconstr_mean,my_reconstr_sigma)
 
+    def test_reconstruct(self,X):
+        (z_mean, z_log_sigma_sq)=self.sess.run((self.z_mean,self.z_log_sigma_sq),feed_dict={self.x: X})
+        n_z = self.network_architecture["n_z"]
+        eps = tf.random_normal((X.shape[0], n_z), 0, 1,
+                               dtype=tf.float32)
+        z = tf.add(z_mean,
+                   tf.mul(tf.sqrt(tf.exp(z_log_sigma_sq)), eps))
+        layer_1 = self.transfer_fct(tf.add(tf.matmul(z, self.layer_1_weight),
+                                           self.layer_1_biases))
+        layer_2 = self.transfer_fct(tf.add(tf.matmul(layer_1, self.layer_2_weight),
+                                           self.layer_2_biases))
+
+        x_reconstr_mean = \
+            self.sess.run((tf.sigmoid(tf.add(tf.matmul(layer_2, self.weights_out_mean),
+                              self.weights_out_biases))))
+        '''
+        z_log_sigma_sq=self.sess.run(self.z_log_sigma_sq,feed_dict={self.x: X})
+        n_z = self.network_architecture["n_z"]
+        eps = tf.random_normal((X.shape[0], n_z), 0, 1,
+                               dtype=tf.float32)
+        # z = mu + sigma*epsilon
+        z = tf.add(z_mean,
+                        tf.mul(tf.sqrt(tf.exp(z_log_sigma_sq)), eps))
+
+        # Use generator to determine mean of
+        # Bernoulli distribution of reconstructed input
+
+        layer_1 = self.transfer_fct(tf.add(tf.matmul(self.z, weights['h1']),
+                                           biases['b1']))
+        layer_2 = self.transfer_fct(tf.add(tf.matmul(layer_1, weights['h2']),
+                                           biases['b2']))
+        x_reconstr_mean = \
+            tf.sigmoid(tf.add(tf.matmul(layer_2, weights['out_mean']),
+                                 biases['out_mean']))
+        x_reconstr_log_sigma = \
+            tf.sigmoid(tf.add(tf.matmul(layer_2, weights['out_log_sigma']),
+                    biases['out_log_sigma']))
+        '''
+        return (z_mean,x_reconstr_mean)
+
 ################# Train Function #################
-def train(network_architecture, learning_rate=0.0005,
+def train(data_input,network_architecture, learning_rate=0.0005,
           batch_size=20, training_epochs=10, display_step=1):
     vae = VariationalAutoencoder(network_architecture,
                                  learning_rate=learning_rate,
@@ -280,10 +345,10 @@ def train(network_architecture, learning_rate=0.0005,
         plt.ion()
         for i in range(total_batch):
             #batch_xs, _ = mnist.train.next_batch(batch_size)
-            batch_xs = frey_next_batch(batch_size,test_mat)
+            batch_xs = frey_next_batch(batch_size,data_input)
             #print(batch_xs.shape)
             # Fit training using batch data
-
+            '''
             plt.subplot(211)
             plt.plot(batch_xs[0,:])
 
@@ -291,15 +356,16 @@ def train(network_architecture, learning_rate=0.0005,
             #plt.plot(vae.reconstr_show_mean[0,:])
 
             (cost,my_reconstr,first_layer_weights) = vae.partial_fit(batch_xs)
-            
+
+
             plt.subplot(212)
             plt.plot(my_reconstr[0,:])
 
             plt.show()
             plt.pause(0.005)
             plt.gcf().clear()
-
-
+            '''
+            (cost,my_reconstr,first_layer_weights) = vae.partial_fit(batch_xs)
             #print('this cost:',cost)
             # Compute average loss
             avg_cost += cost / n_samples * batch_size
@@ -316,14 +382,73 @@ def train(network_architecture, learning_rate=0.0005,
     return vae,loss_step,loss_vec
 
 
-################# Train Function #################
+################# Train and Test Function ###############################################################
 
+###Training percent, control and patient sizes
+Train_size=0.7
+control_size=150
+patient_size=121
+
+###Extracting subsamples from control and patient
+Con_samp=int(round(Train_size*control_size))
+Pat_samp=int(round(Train_size*patient_size))
+
+###Indexes of training and testing
+ID_con=np.random.permutation(control_size)
+ID_pat=control_size+np.random.permutation(patient_size)
+
+Index_con_train = ID_con[0:Con_samp]
+Index_con_test = ID_con[Con_samp+0:control_size]
+
+Index_pat_train = ID_pat[0:Pat_samp]
+Index_pat_test = ID_pat[Pat_samp+0:patient_size]
+
+test_mat=(rawData-raw_min)/(raw_max-raw_min)
+n_samples=test_mat.shape[0]
+
+X_train_con=test_mat[Index_con_train,:]
+X_train_pat=test_mat[Index_pat_train,:]
+X_train=np.concatenate((X_train_con, X_train_pat), axis=0)
+
+X_test_con=test_mat[Index_con_test,:]
+X_test_pat=test_mat[Index_pat_test,:]
+X_test=np.concatenate((X_test_con, X_test_pat), axis=0)
+
+
+print('X_train',X_train.shape)
+print('X_test',X_test.shape)
+#print('ID_con',ID_con)
+print('Index_pat_train',np.sort(Index_pat_train))
+print('Index_pat_test',np.sort(Index_pat_test))
+
+#print('Index_pat_train',Index_pat_train)
+
+#print('Index_pat_train_min',np.min(Index_pat_train))
+
+'''
 network_architecture = \
     dict(n_hidden_recog_1=200, # 1st layer encoder neurons
          n_hidden_recog_2=200, # 2nd layer encoder neurons
          n_hidden_gener_1=200, # 1st layer decoder neurons
          n_hidden_gener_2=200, # 2nd layer decoder neurons
-         n_input=test_mat.shape[1], # MNIST data input (img shape: 28*28)
-         n_z=20)  # dimensionality of latent space
+         n_input=X_train.shape[1], # MNIST data input (img shape: 28*28)
+         n_z=20,
+         )  # dimensionality of latent space
 batch_size=20
-(vae,loss_step,loss_vec) = train(network_architecture,batch_size=batch_size, training_epochs=100)
+#(vae,loss_step,loss_vec) = train(X_train,network_architecture,batch_size=batch_size, training_epochs=1)
+X_test=test_mat[0:2,:]
+(z_mean,x_reconstr_mean)=vae.test_reconstruct(X_test)
+print('x_reconstr_mean_shpe: ',x_reconstr_mean.shape)
+plt.subplot(211)
+#plt.plot(X_test[0, :])
+plt.plot(X_test[0, :])
+#plt.plot(x_reconstr_mean[0,:])
+plt.subplot(212)
+plt.plot(x_reconstr_mean[0, :])
+plt.show()
+plt.pause(5)
+
+#print(z_mean)
+#print(z_mean.shape)
+#print(my_reconstr_mean.shape)
+'''
