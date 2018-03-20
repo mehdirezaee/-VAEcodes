@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import scipy.io as spio
+from sklearn import svm
 import pickle
 #from tensorflow.examples.tutorials.mnist import input_data
 
@@ -13,12 +14,17 @@ import pickle
 
 
 #np.random.seed(0)
-tf.set_random_seed(0)
+
 #mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
 rawData = spio.loadmat('/media/mehdi/NewFiles1/Task_data/AOD1.mat', squeeze_me=True)
 rawData=rawData['ODD']
 raw_min=np.min(rawData)
 raw_max=np.max(rawData)
+rawData=(rawData-raw_min)/(raw_max-raw_min)
+for r in range(0,rawData.shape[0]):
+    for c in range(0,rawData.shape[1]):
+        if(rawData[r,c]<0.52 and rawData[r,c]>0.45):
+            rawData[r,c]=0
 #test_mat=(rawData-np.min(rawData))/(np.max(rawData)-np.min(rawData))
 ''''
 test_mat=(rawData-raw_min)/(raw_max-raw_min)
@@ -328,7 +334,7 @@ class VariationalAutoencoder(object):
         return (z_mean,x_reconstr_mean)
 
 ################# Train Function #################
-def train(data_input,network_architecture, learning_rate=0.0005,
+def train(data_input,network_architecture, learning_rate=0.0001,
           batch_size=20, training_epochs=10, display_step=1):
     vae = VariationalAutoencoder(network_architecture,
                                  learning_rate=learning_rate,
@@ -383,62 +389,83 @@ def train(data_input,network_architecture, learning_rate=0.0005,
 
 
 ################# Train and Test Function ###############################################################
+for k in range(0,10):
+    tf.set_random_seed(0)
+    ###Training percent, control and patient sizes
+    Train_size=0.7
+    control_size=150
+    patient_size=121
 
-###Training percent, control and patient sizes
-Train_size=0.7
-control_size=150
-patient_size=121
+    ###Extracting subsamples from control and patient
+    Con_samp=int(round(Train_size*control_size))
+    Pat_samp=int(round(Train_size*patient_size))
 
-###Extracting subsamples from control and patient
-Con_samp=int(round(Train_size*control_size))
-Pat_samp=int(round(Train_size*patient_size))
+    ###Indexes of training and testing
+    ID_con=np.random.permutation(control_size)
+    ID_pat=control_size+np.random.permutation(patient_size)
 
-###Indexes of training and testing
-ID_con=np.random.permutation(control_size)
-ID_pat=control_size+np.random.permutation(patient_size)
+    Index_con_train = ID_con[0:Con_samp]
+    Index_con_test = ID_con[Con_samp+0:control_size]
 
-Index_con_train = ID_con[0:Con_samp]
-Index_con_test = ID_con[Con_samp+0:control_size]
+    Index_pat_train = ID_pat[0:Pat_samp]
+    Index_pat_test = ID_pat[Pat_samp+0:patient_size]
 
-Index_pat_train = ID_pat[0:Pat_samp]
-Index_pat_test = ID_pat[Pat_samp+0:patient_size]
+    #test_mat=(rawData-raw_min)/(raw_max-raw_min)
+    test_mat=rawData
+    n_samples=test_mat.shape[0]
 
-test_mat=(rawData-raw_min)/(raw_max-raw_min)
-n_samples=test_mat.shape[0]
+    X_train_con=test_mat[Index_con_train,:]
+    X_train_pat=test_mat[Index_pat_train,:]
+    X_train=np.concatenate((X_train_con, X_train_pat), axis=0)
 
-X_train_con=test_mat[Index_con_train,:]
-X_train_pat=test_mat[Index_pat_train,:]
-X_train=np.concatenate((X_train_con, X_train_pat), axis=0)
+    X_test_con=test_mat[Index_con_test,:]
+    X_test_pat=test_mat[Index_pat_test,:]
+    X_test=np.concatenate((X_test_con, X_test_pat), axis=0)
+    ##defining labels for groups
+    groups=np.concatenate((-1*np.ones((1,105)),np.ones((1,85))),axis=1)
+    True_class=np.concatenate((-1*np.ones((1,45)),np.ones((1,36))),axis=1)
 
-X_test_con=test_mat[Index_con_test,:]
-X_test_pat=test_mat[Index_pat_test,:]
-X_test=np.concatenate((X_test_con, X_test_pat), axis=0)
+    print('X_train',X_train.shape)
+    print('X_test',X_test.shape)
+
+    #print('Index_pat_train',Index_pat_train)
+
+    #print('Index_pat_train_min',np.min(Index_pat_train))
 
 
-print('X_train',X_train.shape)
-print('X_test',X_test.shape)
-#print('ID_con',ID_con)
-print('Index_pat_train',np.sort(Index_pat_train))
-print('Index_pat_test',np.sort(Index_pat_test))
+    network_architecture = \
+        dict(n_hidden_recog_1=50, # 1st layer encoder neurons
+             n_hidden_recog_2=50, # 2nd layer encoder neurons
+             n_hidden_gener_1=50, # 1st layer decoder neurons
+             n_hidden_gener_2=50, # 2nd layer decoder neurons
+             n_input=X_train.shape[1], # MNIST data input (img shape: 28*28)
+             n_z=20,
+             )  # dimensionality of latent space
+    batch_size=10
 
-#print('Index_pat_train',Index_pat_train)
+    (vae,loss_step,loss_vec) = train(X_train,network_architecture,batch_size=batch_size, training_epochs=20)
+    (z_mean_train,x_trian_reconstr_mean)=vae.test_reconstruct(X_train)
+    (z_mean_test,x_test_reconstr_mean)=vae.test_reconstruct(X_test)
+    #print('z_mean_shape',z_mean.shape)
+    clf = svm.SVC()
+   # print('z_mean_train',z_mean_train)
+    # print('z_mean_test',z_mean_test)
+    #print('groups',groups.shape)
 
-#print('Index_pat_train_min',np.min(Index_pat_train))
+    clf.fit(z_mean_train,np.ravel(groups))
+    test_predict=np.ravel(clf.predict(z_mean_test))
+    test_classification_rate=(np.count_nonzero(True_class-test_predict)/True_class.shape[1])
+    print('rbf_rate',1-test_classification_rate)
+
+    clf = svm.SVC(kernel='poly',degree=4)
+    clf.fit(z_mean_train,np.ravel(groups))
+    test_predict=np.ravel(clf.predict(z_mean_test))
+    test_classification_rate=(np.count_nonzero(True_class-test_predict)/True_class.shape[1])
+    print('poly_rate',1-test_classification_rate)
+    print('-------------------------------------')
+
 
 '''
-network_architecture = \
-    dict(n_hidden_recog_1=200, # 1st layer encoder neurons
-         n_hidden_recog_2=200, # 2nd layer encoder neurons
-         n_hidden_gener_1=200, # 1st layer decoder neurons
-         n_hidden_gener_2=200, # 2nd layer decoder neurons
-         n_input=X_train.shape[1], # MNIST data input (img shape: 28*28)
-         n_z=20,
-         )  # dimensionality of latent space
-batch_size=20
-#(vae,loss_step,loss_vec) = train(X_train,network_architecture,batch_size=batch_size, training_epochs=1)
-X_test=test_mat[0:2,:]
-(z_mean,x_reconstr_mean)=vae.test_reconstruct(X_test)
-print('x_reconstr_mean_shpe: ',x_reconstr_mean.shape)
 plt.subplot(211)
 #plt.plot(X_test[0, :])
 plt.plot(X_test[0, :])
@@ -447,8 +474,7 @@ plt.subplot(212)
 plt.plot(x_reconstr_mean[0, :])
 plt.show()
 plt.pause(5)
-
+'''
 #print(z_mean)
 #print(z_mean.shape)
 #print(my_reconstr_mean.shape)
-'''
