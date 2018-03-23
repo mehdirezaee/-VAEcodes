@@ -3,6 +3,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import scipy.io as spio
 from sklearn import svm
+import gc
 import pickle
 #from tensorflow.examples.tutorials.mnist import input_data
 
@@ -21,9 +22,10 @@ rawData=rawData['ODD']
 raw_min=np.min(rawData)
 raw_max=np.max(rawData)
 rawData=(rawData-raw_min)/(raw_max-raw_min)
+beta = 0.01
 for r in range(0,rawData.shape[0]):
     for c in range(0,rawData.shape[1]):
-        if(rawData[r,c]<0.52 and rawData[r,c]>0.45):
+        if(rawData[r,c]<0.52 and rawData[r,c]>0.47):
             rawData[r,c]=0
 #test_mat=(rawData-np.min(rawData))/(np.max(rawData)-np.min(rawData))
 ''''
@@ -88,7 +90,7 @@ class VariationalAutoencoder(object):
         self.x = tf.placeholder(tf.float32, [None, network_architecture["n_input"]])
 
         # Create autoencoder network
-        self.my_sess=tf.InteractiveSession()
+        # self.my_sess=tf.InteractiveSession()
         self._create_network()
         # Define loss function based variational upper-bound and
         # corresponding optimizer
@@ -99,7 +101,7 @@ class VariationalAutoencoder(object):
         init = tf.global_variables_initializer()
 
         # Launch the session
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.Session()
         self.sess.run(init)
         self.first_layer_w=self.sess.run(self.first_layer_weights)
         self.second_layer_w=self.sess.run(self.second_layer_weights)
@@ -241,7 +243,11 @@ class VariationalAutoencoder(object):
         latent_loss = -0.5 * tf.reduce_sum(1 + self.z_log_sigma_sq
                                            - tf.square(self.z_mean)
                                            - tf.exp(self.z_log_sigma_sq), 1)
-        self.cost = tf.reduce_mean(reconstr_loss + latent_loss)  # average over batch
+
+        sparsity_loss=tf.reduce_sum(tf.abs(self.x_reconstr_mean),1)
+        regularizer_first_layer = tf.nn.l2_loss(self.layer_1_weight)
+        #self.cost = tf.reduce_mean(reconstr_loss + latent_loss)  # average over batch
+        self.cost = tf.reduce_mean(reconstr_loss + latent_loss+0.1*sparsity_loss+beta*regularizer_first_layer)  # average over batch
         self.reconstr_loss=reconstr_loss
         self.latent_loss=latent_loss
         # Use ADAM optimizer
@@ -411,15 +417,15 @@ for k in range(0,10):
     Index_pat_test = ID_pat[Pat_samp+0:patient_size]
 
     #test_mat=(rawData-raw_min)/(raw_max-raw_min)
-    test_mat=rawData
-    n_samples=test_mat.shape[0]
+    # test_mat=rawData
+    n_samples=rawData.shape[0]
 
-    X_train_con=test_mat[Index_con_train,:]
-    X_train_pat=test_mat[Index_pat_train,:]
+    X_train_con=rawData[Index_con_train,:]
+    X_train_pat=rawData[Index_pat_train,:]
     X_train=np.concatenate((X_train_con, X_train_pat), axis=0)
 
-    X_test_con=test_mat[Index_con_test,:]
-    X_test_pat=test_mat[Index_pat_test,:]
+    X_test_con=rawData[Index_con_test,:]
+    X_test_pat=rawData[Index_pat_test,:]
     X_test=np.concatenate((X_test_con, X_test_pat), axis=0)
     ##defining labels for groups
     groups=np.concatenate((-1*np.ones((1,105)),np.ones((1,85))),axis=1)
@@ -434,10 +440,10 @@ for k in range(0,10):
 
 
     network_architecture = \
-        dict(n_hidden_recog_1=50, # 1st layer encoder neurons
-             n_hidden_recog_2=50, # 2nd layer encoder neurons
-             n_hidden_gener_1=50, # 1st layer decoder neurons
-             n_hidden_gener_2=50, # 2nd layer decoder neurons
+        dict(n_hidden_recog_1=70, # 1st layer encoder neurons
+             n_hidden_recog_2=70, # 2nd layer encoder neurons
+             n_hidden_gener_1=70, # 1st layer decoder neurons
+             n_hidden_gener_2=70, # 2nd layer decoder neurons
              n_input=X_train.shape[1], # MNIST data input (img shape: 28*28)
              n_z=20,
              )  # dimensionality of latent space
@@ -457,12 +463,21 @@ for k in range(0,10):
     test_classification_rate=(np.count_nonzero(True_class-test_predict)/True_class.shape[1])
     print('rbf_rate',1-test_classification_rate)
 
-    clf = svm.SVC(kernel='poly',degree=4)
-    clf.fit(z_mean_train,np.ravel(groups))
-    test_predict=np.ravel(clf.predict(z_mean_test))
-    test_classification_rate=(np.count_nonzero(True_class-test_predict)/True_class.shape[1])
-    print('poly_rate',1-test_classification_rate)
+    # clf = svm.SVC(kernel='poly',degree=4)
+    # clf.fit(z_mean_train,np.ravel(groups))
+    # test_predict=np.ravel(clf.predict(z_mean_test))
+    # test_classification_rate=(np.count_nonzero(True_class-test_predict)/True_class.shape[1])
+    # print('poly_rate',1-test_classification_rate)
     print('-------------------------------------')
+    del clf
+    del X_train
+    del X_test
+    vae.sess.close()
+    del vae
+    gc.collect()
+
+    gvars = tf.get_collection_ref(tf.GraphKeys.GLOBAL_VARIABLES)
+    gvars.clear()
 
 
 '''
